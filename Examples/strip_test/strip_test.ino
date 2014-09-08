@@ -1,6 +1,7 @@
 #include <WS2811Driver.h>
 
-WS2811Driver ledStrip = WS2811Driver(60, NEO_GRB);
+//Setup 60 GRB LED Strip on Launchpad pin 2
+WS2811Driver ledStrip = WS2811Driver(60, 2, NEO_GRB);
 
 void setup(void)
 {
@@ -11,6 +12,8 @@ void setup(void)
     ledStrip.setPixelColor(i, 0, 0, 0);
   }
   
+  ledStrip.setBrightness(255);      //Set LED strip brightness to max
+  
   ledStrip.begin();        // configure P1.6 for output
 }
 
@@ -19,12 +22,13 @@ void loop() {
   colorWipe(ledStrip.Color(255, 0, 0), 50); // Red
   colorWipe(ledStrip.Color(0, 255, 0), 50); // Green
   colorWipe(ledStrip.Color(0, 0, 255), 50); // Blue
+  
   // Send a theater pixel chase in...
   theaterChase(ledStrip.Color(127, 127, 127), 50); // White
   theaterChase(ledStrip.Color(127,   0,   0), 50); // Red
   theaterChase(ledStrip.Color(  0,   0, 127), 50); // Blue
 
-  rainbowCycle(20);
+  rainbowCycle(10);
   theaterChaseRainbow(50);
 }
 

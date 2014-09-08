@@ -24,10 +24,10 @@
 #include "ws2811.h"
 
         .file "ws2811_hs.S"
-        .global write_ws2811_hs
+        .global write_ws2811_hs_16
 
 ;--------------------------------------------------------------------------------------------------------------
-; void write_ws2811_hs(uint8_t *data, uint16_t length, uint8_t pinmask);
+; void write_ws2811_hs_16(uint8_t *data, uint16_t length, uint8_t pinmask);
 ;                      data - R15,    length - R14,    pinmask R13
 ;
 ; NOTE: assumes interrupts are disabled as cycle counts are used for timing
@@ -40,10 +40,10 @@
 ;
 ;
 ;--------------------------------------------------------------------------------------------------------------
-        .section .text.write_ws2811_hs
+        .section .text.write_ws2811_hs_16
         .p2align 1,0                    ; align on a word boundary
-        .type write_ws2811_hs,@function
-write_ws2811_hs:
+        .type write_ws2811_hs_16,@function
+write_ws2811_hs_16:
         push    R11                     ; Save R11
 byte_loop_hs:                           ;
         mov     #7, R11                 ; Do 7 bits in a loop

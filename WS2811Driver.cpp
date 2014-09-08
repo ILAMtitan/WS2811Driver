@@ -44,7 +44,7 @@ extern "C" void enableWatchDog();
 				NEO_BRG
  *  @return Void.
  */
-WS2811Driver::WS2811Driver(uint8_t n, uint8_t t) : _led_cnt(n) ,_pin_mask(WS2811_BITMASK)
+WS2811Driver::WS2811Driver(uint8_t n, uint8_t p, uint8_t t) : _led_cnt(n) ,_pin_mask(digitalPinToBitMask(p)), _port_mask(digitalPinToPort(p)), pin(p)
 {
 	//Allocate RAM for pixel buffer
 	if((pixels = (uint8_t *)malloc(_led_cnt * 3))) {
@@ -70,6 +70,7 @@ WS2811Driver::WS2811Driver(uint8_t n, uint8_t t) : _led_cnt(n) ,_pin_mask(WS2811
  *  @return Void.
  */
 WS2811Driver::~WS2811Driver() {
+  pinMode(pin, INPUT);
   if(pixels) free(pixels);
 }
 
@@ -79,7 +80,9 @@ WS2811Driver::~WS2811Driver() {
  */
 void WS2811Driver::begin()
 {
-    WS2811_PORTDIR |= _pin_mask;
+    //WS2811_PORTDIR |= _pin_mask;
+	pinMode(pin, OUTPUT);
+	digitalWrite(pin, LOW);
 }
 
 /** @brief End hardware output.
@@ -88,7 +91,8 @@ void WS2811Driver::begin()
  */
 void WS2811Driver::end()
 {
-    WS2811_PORTDIR &= ~_pin_mask;
+    //WS2811_PORTDIR &= ~_pin_mask;
+	pinMode(pin, INPUT);
 }
 
 /** @brief Function to be used by application to update LED strip
@@ -97,8 +101,15 @@ void WS2811Driver::end()
  */
 void WS2811Driver::show(void){
 	disableWatchDog();
-    write_ws2811_hs(pixels, _led_cnt * 3, _pin_mask);
+#if F_CPU == 16000000L
+    write_ws2811_hs_16(pixels, _led_cnt * 3, _pin_mask);
+#elif F_CPU == 25000000L
+	write_ws2811_hs_25(pixels, _led_cnt * 3, _pin_mask);
+#else
+#error WS2811Driver : Incorrect hardware selected, must be G2 or F5529 at 16 or 25MHz
+#endif
     enableWatchDog();
+
 }
 
 /** @brief Set pixel color from separate R,G,B components
@@ -112,10 +123,17 @@ void WS2811Driver::show(void){
  */
 void WS2811Driver::setPixelColor(
  uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
+   if(n < _led_cnt) {
+    if(brightness) { // See notes in setBrightness()
+      r = (r * brightness) >> 8;
+      g = (g * brightness) >> 8;
+      b = (b * brightness) >> 8;
+    }
     uint8_t *p = &pixels[n * 3];
     p[rOffset] = r;
     p[gOffset] = g;
     p[bOffset] = b;
+  };
 }
 
 /** @brief Set pixel color from 'packed' 32-bit RGB color
@@ -131,6 +149,11 @@ void WS2811Driver::setPixelColor(uint16_t n, uint32_t c) {
       r = (uint8_t)(c >> 16),
       g = (uint8_t)(c >>  8),
       b = (uint8_t)c;
+    if(brightness) { // See notes in setBrightness()
+      r = (r * brightness) >> 8;
+      g = (g * brightness) >> 8;
+      b = (b * brightness) >> 8;
+    }
     uint8_t *p = &pixels[n * 3];
     p[rOffset] = r;
     p[gOffset] = g;
@@ -176,4 +199,57 @@ uint32_t WS2811Driver::Color(uint8_t r, uint8_t g, uint8_t b) {
  */
 uint16_t WS2811Driver::numPixels(void) {
   return _led_cnt;
+}
+
+/** @brief Adjust output brightness; 0=darkest (off), 255=brightest.  This does
+ *  NOT immediately affect what's currently displayed on the LEDs.  The
+ *  next call to show() will refresh the LEDs at this level.  However,
+ *  this process is potentially "lossy," especially when increasing
+ *  brightness.  The tight timing in the WS2811/WS2812 code means there
+ *  aren't enough free cycles to perform this scaling on the fly as data
+ *  is issued.  So we make a pass through the existing color data in RAM
+ *  and scale it (subsequent graphics commands also work at this
+ *  brightness level).  If there's a significant step up in brightness,
+ *  the limited number of steps (quantization) in the old data will be
+ *  quite visible in the re-scaled version.  For a non-destructive
+ *  change, you'll need to re-render the full strip data.  C'est la vie.
+ *
+ *  @param b Brightness value for strip
+ *
+ *  @return void
+ */
+void WS2811Driver::setBrightness(uint8_t b) {
+  // Stored brightness value is different than what's passed.
+  // This simplifies the actual scaling math later, allowing a fast
+  // 8x8-bit multiply and taking the MSB.  'brightness' is a uint8_t,
+  // adding 1 here may (intentionally) roll over...so 0 = max brightness
+  // (color values are interpreted literally; no scaling), 1 = min
+  // brightness (off), 255 = just below max brightness.
+  uint8_t newBrightness = b + 1;
+  if(newBrightness != brightness) { // Compare against prior value
+    // Brightness has changed -- re-scale existing data in RAM
+    uint8_t  c,
+            *ptr           = pixels,
+             oldBrightness = brightness - 1; // De-wrap old brightness value
+    uint16_t scale;
+    if(oldBrightness == 0) scale = 0; // Avoid /0
+    else if(b == 255) scale = 65535 / oldBrightness;
+    else scale = (((uint16_t)newBrightness << 8) - 1) / oldBrightness;
+    for(uint16_t i=0; i<(_led_cnt * 3); i++) {
+      c      = *ptr;
+      *ptr++ = (c * scale) >> 8;
+    }
+    brightness = newBrightness;
+  }
+}
+
+// Set the output pin number
+void WS2811Driver::setPin(uint8_t p) {
+  pinMode(pin, INPUT);
+  pin = p;
+  _pin_mask = digitalPinToBitMask(p);
+  _port_mask = digitalPinToPort(p);
+  
+  pinMode(p, OUTPUT);
+  digitalWrite(p, LOW);
 }

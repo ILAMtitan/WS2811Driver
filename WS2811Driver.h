@@ -36,7 +36,8 @@
 #include "ws2811.h"
 
 //Assembly call to strip update function
-extern "C" void write_ws2811_hs(const uint8_t *data, uint16_t length, uint8_t pinmask);
+extern "C" void write_ws2811_hs_16(const uint8_t *data, uint16_t length, uint8_t pinmask);
+extern "C" void write_ws2811_hs_25(const uint8_t *data, uint16_t length, uint8_t pinmask);
 
 // 'type' flags for LED pixels (third parameter to constructor):
 #define NEO_RGB     0x00 // Wired for RGB data order
@@ -47,13 +48,16 @@ class WS2811Driver {
 private:
     uint16_t _led_cnt; // how many leds in the strip
     uint8_t _pin_mask; // bitmask for example, PORT P1.7 would be BIT7
+	uint8_t _port_mask; // port mask
+	uint8_t pin;
 	uint8_t *pixels;   // pointer to array holding all color information
+	uint8_t brightness;
 	uint8_t rOffset,   // Index of red byte within each 3-byte pixel
 		gOffset,       // Index of green byte
 		bOffset;       // Index of blue byte
 
 public:
-    WS2811Driver(uint8_t n, uint8_t t=NEO_GRB);
+    WS2811Driver(uint8_t n, uint8_t p, uint8_t t=NEO_GRB);
 	~WS2811Driver();
 
     void begin();
@@ -65,6 +69,8 @@ public:
 	uint32_t getPixelColor(uint16_t n);
 	uint32_t Color(uint8_t r, uint8_t g, uint8_t b);
 	uint16_t numPixels(void);
+	void setBrightness(uint8_t);
+	void setPin(uint8_t p);
 };
 
 #endif /* WS2811DRIVER_H_ */
