@@ -80,9 +80,38 @@ WS2811Driver::~WS2811Driver() {
  */
 void WS2811Driver::begin()
 {
-    //WS2811_PORTDIR |= _pin_mask;
 	pinMode(pin, OUTPUT);
 	digitalWrite(pin, LOW);
+
+	switch (_port_mask)
+	{
+	case 0x01:
+		_port_mask = 0x0202;
+		break;
+	case 0x02:
+		_port_mask = 0x0203;
+		break;
+	case 0x03:
+		_port_mask = 0x0222;
+		break;
+	case 0x04:
+		_port_mask = 0x0223;
+		break;
+	case 0x05:
+		_port_mask = 0x0242;
+		break;
+	case 0x06:
+		_port_mask = 0x0243;
+		break;
+	case 0x07:
+		_port_mask = 0x0262;
+		break;
+	case 0x08:
+		_port_mask = 0x0263;
+		break;
+	}
+
+
 }
 
 /** @brief End hardware output.
@@ -91,7 +120,6 @@ void WS2811Driver::begin()
  */
 void WS2811Driver::end()
 {
-    //WS2811_PORTDIR &= ~_pin_mask;
 	pinMode(pin, INPUT);
 }
 
@@ -102,11 +130,11 @@ void WS2811Driver::end()
 void WS2811Driver::show(void){
 	disableWatchDog();
 #if F_CPU == 16000000L
-    write_ws2811_hs_16(pixels, _led_cnt * 3, _pin_mask);
+    write_ws2811_hs_16(pixels, _led_cnt * 3, _pin_mask, _port_mask);
 #elif F_CPU == 25000000L
-	write_ws2811_hs_25(pixels, _led_cnt * 3, _pin_mask);
+	write_ws2811_hs_25(pixels, _led_cnt * 3, _pin_mask, _port_mask);
 #else
-#error WS2811Driver : Incorrect hardware selected, must be G2 or F5529 at 16 or 25MHz
+#error WS2811Driver : Incorrect hardware selected, must be G2, F5529, or FR5969 at 16 or 25MHz
 #endif
     enableWatchDog();
 
@@ -250,6 +278,34 @@ void WS2811Driver::setPin(uint8_t p) {
   _pin_mask = digitalPinToBitMask(p);
   _port_mask = digitalPinToPort(p);
   
+	switch (_port_mask)
+	{
+	case 0x01:
+		_port_mask = 0x0202;
+		break;
+	case 0x02:
+		_port_mask = 0x0203;
+		break;
+	case 0x03:
+		_port_mask = 0x0222;
+		break;
+	case 0x04:
+		_port_mask = 0x0223;
+		break;
+	case 0x05:
+		_port_mask = 0x0242;
+		break;
+	case 0x06:
+		_port_mask = 0x0243;
+		break;
+	case 0x07:
+		_port_mask = 0x0262;
+		break;
+	case 0x08:
+		_port_mask = 0x0263;
+		break;
+	}
+
   pinMode(p, OUTPUT);
   digitalWrite(p, LOW);
 }

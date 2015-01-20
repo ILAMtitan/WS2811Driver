@@ -27,8 +27,8 @@
         .global write_ws2811_hs_25
 
 ;--------------------------------------------------------------------------------------------------------------
-; void write_ws2811_hs_25(uint8_t *data, uint16_t length, uint8_t pinmask);
-;                      data - R15,    length - R14,    pinmask R13
+; void write_ws2811_hs_25(uint8_t *data, uint16_t length, uint8_t pinmask, uint8_t portmask);
+;                         data - R15,    length - R14,    pinmask - R13,   portmask - @R12
 ;
 ; NOTE: assumes interrupts are disabled as cycle counts are used for timing
 ;
@@ -44,71 +44,94 @@
         .p2align 1,0                    ; align on a word boundary
         .type write_ws2811_hs_25,@function
 write_ws2811_hs_25:
+        push    R10                     ; Save R10
         push    R11                     ; Save R11
 byte_loop_hs:                           ;
-        mov     #7, R11                 ; Do 7 bits in a loop
-        mov.b   @R15+, R12              ; Get next byte from buffer
+        mov     #7, R10                 ; Do 7 bits in a loop
+        mov.b   @R15+, R11              ; Get next byte from buffer
 bit_loop_hs:                            ; - Bit loop - 20 cycles per bit
-        rla.b   R12                     ; Get next bit
+        rla.b   R11                     ; Get next bit
         jc      one_hs                  ; Jump if one...
-        bis.b   R13, &WS2811_PORTOUT    ; Output high
-        bic.b   R13, &WS2811_PORTOUT    ; Output low - 4 cycles elapsed
+        bis.b   R13, @R12                ; Output high
+        nop
+        nop
+        bic.b   R13, @R12                ; Output low - 4 cycles elapsed
+        nop
         nop
         nop
         nop
 		nop
-        bic.b   R13, &WS2811_PORTOUT    ; 4 cycle nop
+        nop
         nop
 		nop
         nop
         nop
         jmp     next_bit_hs             ; Next bit...
 one_hs:                                 ;
-        bis.b   R13, &WS2811_PORTOUT    ; Output high
-        bis.b   R13, &WS2811_PORTOUT    ; 4 cycle nop
+        bis.b   R13, @R12                ; Output high
         nop
         nop
-		nop
-        nop
-        jmp     $ + 2                   ; 2 cycle nop
         nop
 		nop
 		nop
-        bic.b   R13, &WS2811_PORTOUT    ; Output low - 10 cycles elapsed
+		nop
+        nop
+        nop
+		nop
+        bic.b   R13, @R12                ; Output low - 10 cycles elapsed
+        nop
+        nop
+        nop
+        nop
+        nop
 next_bit_hs:                            ;
-        dec     R11                     ; Decrement bit count
+        dec     R10                     ; Decrement bit count
         jne     bit_loop_hs             ; Do next bit of not zero...
                                         ;
-        rla.b   R12                     ; Get final bit of byte
+        rla.b   R11                     ; Get final bit of byte
         jc      last_one_hs             ; Jump if one...
-        bis.b   R13, &WS2811_PORTOUT    ; Output high
-        bic.b   R13, &WS2811_PORTOUT    ; Output low - 4 cycles elapsed
+        bis.b   R13, @R12                ; Output high
+        nop
+        nop
+        bic.b   R13, @R12                ; Output low - 4 cycles elapsed
+        nop
+        nop
+        nop
+        nop
+        nop
         nop
         nop
 		nop
-        nop
-        jmp     $ + 2                   ; 2 cycle nop
-        nop
 		nop
 		nop
         dec     R14                     ; Decrement byte count
         jne     byte_loop_hs            ; Next byte if count not zero...
         jmp     reset_hs                ; All bytes done, reset...
 last_one_hs:                            ;
-        bis.b   R13, &WS2811_PORTOUT    ; Output high
-        jmp     $ + 2                   ; 2 cycle nop
+        bis.b   R13, @R12                ; Output high
+        nop
+        nop
         nop
 		nop
 		nop
-        mov     #7, R11                 ; Reset bit counter
-        mov.b   @R15+, R12              ; Get next byte from buffer
-        bic.b   R13, &WS2811_PORTOUT    ; Output low - 10 cycles elapsed
+		nop
+		nop
+        mov     #7, R10                 ; Reset bit counter
+        mov.b   @R15+, R11              ; Get next byte from buffer
+        bic.b   R13, @R12                ; Output low - 10 cycles elapsed
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
         dec     R14                     ; Decrement byte count
         jne     bit_loop_hs             ; Do next byte if count is not zero...
                                         ;
 reset_hs:                               ;
-        mov     #1250 / 3, R12           ; 800 cycle delay for reset
-        dec     R12                     ;
+        mov     #1250 / 3, R11          ; 800 cycle delay for reset
+        dec     R11                     ;
         jne     $ - 2                   ;
-        pop     R11                     ; Restore R11
+        pop     R11                     ; Restore R10
+        pop     R10                     ; Restore R11
         ret                             ; Return

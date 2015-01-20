@@ -22,8 +22,6 @@
 #ifndef WS2811_H_
 #define WS2811_H_
 
-#define WS2811_BITMASK BIT6
-#define WS2811_PORTDIR P1DIR
-#define WS2811_PORTOUT P1OUT\
+#define WS2811_PORTOUT P3OUT
 
 #endif /* WS2811_H_ */

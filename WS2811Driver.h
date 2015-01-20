@@ -36,8 +36,8 @@
 #include "ws2811.h"
 
 //Assembly call to strip update function
-extern "C" void write_ws2811_hs_16(const uint8_t *data, uint16_t length, uint8_t pinmask);
-extern "C" void write_ws2811_hs_25(const uint8_t *data, uint16_t length, uint8_t pinmask);
+extern "C" void write_ws2811_hs_16(const uint8_t *data, uint16_t length, uint8_t pinmask, uint16_t portmask);
+extern "C" void write_ws2811_hs_25(const uint8_t *data, uint16_t length, uint8_t pinmask, uint16_t portmask);
 
 // 'type' flags for LED pixels (third parameter to constructor):
 #define NEO_RGB     0x00 // Wired for RGB data order
@@ -48,7 +48,7 @@ class WS2811Driver {
 private:
     uint16_t _led_cnt; // how many leds in the strip
     uint8_t _pin_mask; // bitmask for example, PORT P1.7 would be BIT7
-	uint8_t _port_mask; // port mask
+	uint16_t _port_mask; // port mask
 	uint8_t pin;
 	uint8_t *pixels;   // pointer to array holding all color information
 	uint8_t brightness;
