@@ -83,34 +83,7 @@ void WS2811Driver::begin()
 	pinMode(pin, OUTPUT);
 	digitalWrite(pin, LOW);
 
-	switch (_port_mask)
-	{
-	case 0x01:
-		_port_mask = 0x0202;
-		break;
-	case 0x02:
-		_port_mask = 0x0203;
-		break;
-	case 0x03:
-		_port_mask = 0x0222;
-		break;
-	case 0x04:
-		_port_mask = 0x0223;
-		break;
-	case 0x05:
-		_port_mask = 0x0242;
-		break;
-	case 0x06:
-		_port_mask = 0x0243;
-		break;
-	case 0x07:
-		_port_mask = 0x0262;
-		break;
-	case 0x08:
-		_port_mask = 0x0263;
-		break;
-	}
-
+	_port_mask = (uint16_t)portOutputRegister(_port_mask);
 
 }
 
@@ -278,33 +251,7 @@ void WS2811Driver::setPin(uint8_t p) {
   _pin_mask = digitalPinToBitMask(p);
   _port_mask = digitalPinToPort(p);
   
-	switch (_port_mask)
-	{
-	case 0x01:
-		_port_mask = 0x0202;
-		break;
-	case 0x02:
-		_port_mask = 0x0203;
-		break;
-	case 0x03:
-		_port_mask = 0x0222;
-		break;
-	case 0x04:
-		_port_mask = 0x0223;
-		break;
-	case 0x05:
-		_port_mask = 0x0242;
-		break;
-	case 0x06:
-		_port_mask = 0x0243;
-		break;
-	case 0x07:
-		_port_mask = 0x0262;
-		break;
-	case 0x08:
-		_port_mask = 0x0263;
-		break;
-	}
+  _port_mask = (uint16_t)portOutputRegister(_port_mask);
 
   pinMode(p, OUTPUT);
   digitalWrite(p, LOW);
