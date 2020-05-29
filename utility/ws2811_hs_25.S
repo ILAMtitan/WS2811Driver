@@ -60,30 +60,36 @@ bit_loop_hs:                            ; - Bit loop - 20 cycles per bit
         nop
         nop
         nop
-		nop
+	nop
         nop
         nop
-		nop
+	nop
         nop
         nop
+	nop
+	nop
+	nop
         jmp     next_bit_hs             ; Next bit...
 one_hs:                                 ;
         bis.b   R13, @R12                ; Output high
         nop
         nop
         nop
-		nop
-		nop
-		nop
+	nop
+	nop
+	nop
         nop
         nop
-		nop
+	nop
+	nop
+	nop
         bic.b   R13, @R12                ; Output low - 10 cycles elapsed
         nop
         nop
         nop
         nop
         nop
+	nop
 next_bit_hs:                            ;
         dec     R10                     ; Decrement bit count
         jne     bit_loop_hs             ; Do next bit of not zero...
@@ -101,9 +107,10 @@ next_bit_hs:                            ;
         nop
         nop
         nop
-		nop
-		nop
-		nop
+	nop
+	nop
+	nop
+	nop
         dec     R14                     ; Decrement byte count
         jne     byte_loop_hs            ; Next byte if count not zero...
         jmp     reset_hs                ; All bytes done, reset...
@@ -112,10 +119,10 @@ last_one_hs:                            ;
         nop
         nop
         nop
-		nop
-		nop
-		nop
-		nop
+	nop
+	nop
+	nop
+	nop
         mov     #7, R10                 ; Reset bit counter
         mov.b   @R15+, R11              ; Get next byte from buffer
         bic.b   R13, @R12                ; Output low - 10 cycles elapsed
