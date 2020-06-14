@@ -1,8 +1,8 @@
 /**
- *  WS2811Driver.cpp - driver class implementation for the ws2811 rgb led controller IC.
- *  Supports MSP430G2 and MSP430F5529 Launchpads set t 16MHz.
+ *  WS2811Driver.h - driver class implementation for the ws2811 rgb led controller IC.
+ *  Supports MSP430G2/MSP430F5529 at 16MHz/25MHz and MSP432P401R LaunchPads at 48MHz.
  *
- *  Copyright (C) 2012  Rick Kimball rick@kimballsoftware.com
+ *  Copyright (C) 2020  Shuyang Zhong
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,6 +17,10 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
+ *  Sections of code for MSP430 are forked from 
+ *  https://github.com/ILAMtitan/WS2811Driver
+ *  with thanks to oPossum and Rickta59 from 43oh.com
+ *
  *  Sections of code used from the AdaFruit NeoPixel library:
  *
  *  Written by Phil Burgess / Paint Your Dragon for Adafruit Industries,
@@ -26,18 +30,53 @@
  *  please support Adafruit and open-source hardware by purchasing products
  *  from Adafruit!
  *
- * 09-02-2014
+ *  06-14-2020
  */
 
 #ifndef WS2811DRIVER_H_
 #define WS2811DRIVER_H_
+
+#if defined (__MSP430G2553__) || defined (__MSP430F5529__)
 #include <msp430.h>
 #include <stdint.h>
 #include "ws2811.h"
 
-//Assembly call to strip update function
-extern "C" void write_ws2811_hs_16(const uint8_t *data, uint16_t length, uint8_t pinmask, uint16_t portmask);
-extern "C" void write_ws2811_hs_25(const uint8_t *data, uint16_t length, uint8_t pinmask, uint16_t portmask);
+#elif defined (__MSP432P401R__)
+#include <msp.h>
+#include <ti/drivers/gpio/GPIOMSP432.h>
+#include <driverlib/gpio.h>
+
+static const uint32_t GPIO_PORT_TO_BASE[] =
+{   0x00,
+    0x40004C02,  // P1OUT
+    0x40004C03,  // P2OUT
+    0x40004C22,  // P3OUT
+    0x40004C23,
+    0x40004C42,
+    0x40004C43,
+    0x40004C62,
+    0x40004C63,
+    0x40004C82,
+    0x40004C83,
+    0x40004D22
+};
+
+extern const GPIOMSP432_Config GPIOMSP432_config;
+#define PIN_TO_PORT(pin) (GPIOMSP432_config.pinConfigs[pin] & 0xff00) >> 8
+#define PIN_TO_BASEREG(pin) ((volatile uint32_t*)(GPIO_PORT_TO_BASE[(GPIOMSP432_config.pinConfigs[pin] & 0xff00) >> 8]))
+#define PIN_TO_BITMASK(pin) (GPIOMSP432_config.pinConfigs[pin] & 0xff)
+#define IO_REG_TYPE uint32_t
+#define IO_REG_ASM
+#define DIRECT_READ(base, mask)         (HWREG((uint32_t)base) & (mask) ? 1 : 0)
+#define DIRECT_MODE_INPUT(base, mask)   (HWREG((uint32_t)base+4) &= ~(mask))
+#define DIRECT_MODE_OUTPUT(base, mask)  (HWREG((uint32_t)base+4) |= (mask))
+#define DIRECT_WRITE_LOW(base, mask)    (HWREG((uint32_t)base+2) &= ~(mask))
+#define DIRECT_WRITE_HIGH(base, mask)   (HWREG((uint32_t)base+2) |= (mask))
+
+#else
+#error WS2811Driver : Incorrect hardware selected, must be MSP430G2, F5529 or MSP432P401R
+
+#endif
 
 // 'type' flags for LED pixels (third parameter to constructor):
 #define NEO_RGB     0x00 // Wired for RGB data order
