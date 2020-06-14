@@ -2,6 +2,7 @@
 WS2811 Driver for MSP430 and MSP432 Launchpads
 
 Support MSP430G2553/MSP430F5529 at 16MHz/25MHz and MSP432P401R LaunchPad at 48MHz
+
 Tested with Energia 1.8.10E23
 
 1. Download libray by using the "Download Zip" button.
